@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class Move
+public abstract class TurnAction
 {
     //types:
     /* 
@@ -45,7 +45,7 @@ Opaque Red: - TBA, pondering some sort of "Martian Colonist", allowing you to re
 public abstract bool Rewind(GameState state);
 }
 
-public class pass : Move
+public class pass : TurnAction
 {
     public override bool Execute(GameState state)
     {
@@ -58,7 +58,7 @@ public class pass : Move
     }
 }
 
-public class Homeworld : Move
+public class Homeworld : TurnAction
 {
     world world;
     List<Pyramid> spentPyramids;
@@ -66,7 +66,8 @@ public class Homeworld : Move
 
     public Homeworld(Pyramid planet1, Pyramid planet2, Color shipColor, int playerId)
     {
-        world = new world { playerHW = playerId, ships = new Ship[] { new Ship ( new Pyramid{ color = shipColor, size = 3 }, owner: playerId  ) }, stars = new Star[2] { new Star(planet1), new Star(planet2) } };
+        spentPyramids = new();
+        world = new world { playerHW = playerId, ships = new List<Ship> { new Ship ( new Pyramid{ color = shipColor, size = 3 }, owner: playerId  ) }, stars = new List<Star> { new Star(planet1), new Star(planet2) } };
         spentPyramids.Add(new Pyramid { color = shipColor, size = 3 });
         spentPyramids.Add(planet1);
         spentPyramids.Add(planet2);
@@ -89,5 +90,50 @@ public class Homeworld : Move
             state.AddToStash(pyramid);
         }
         return state.worlds.Remove(world);
+    }
+}
+
+public class Move : TurnAction
+{
+    public world departure;
+    public world arrival;
+    public Ship moving;
+
+    public override bool Execute(GameState state)
+    {
+        
+        if (departure.ships.Remove(moving))
+        {
+            arrival.ships.Add(moving);
+            if (!state.worlds.Contains(arrival))
+            {
+                state.worlds.Add(arrival);
+            }
+            if(departure.ships.Count == 0)
+            {
+                state.AddToStash(departure.stars);
+                state.worlds.Remove(departure);
+            }
+            return true;
+        } return false;
+    }
+
+    public override bool Rewind(GameState state)
+    {
+        if (arrival.ships.Remove(moving))
+        {
+            departure.ships.Add(moving);
+            if (!state.worlds.Contains(departure))
+            {
+                state.worlds.Add(departure);
+            }
+            if (arrival.ships.Count == 0)
+            {
+                state.AddToStash(arrival.stars);
+                state.worlds.Remove(arrival);
+            }
+            return true;
+        }
+        return false;
     }
 }

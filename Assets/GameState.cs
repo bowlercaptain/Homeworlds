@@ -5,7 +5,11 @@ using UnityEngine;
 public class GameState
 {
     
-    
+    public GameState()
+    {
+        worlds = new();
+        bank = new();
+    }
 
     public List<world> worlds;
     public Dictionary<Pyramid, int> bank;
@@ -48,11 +52,26 @@ public class GameState
     
     public bool TrySpendFromStash(Pyramid pyramid)
     {
+        var py = new Pyramid(pyramid);
+        try { 
         if (bank[pyramid]>0)
         {
             bank[pyramid]--;
             return true;
         } return false;
+        } catch (System.Exception e) {
+            foreach(var key in bank.Keys)
+                Debug.Log(key);
+            throw e;
+        }
+    }
+
+    public void AddToStash(IEnumerable<Pyramid> pyramids)
+    {
+        foreach(var py in pyramids)
+        {
+            AddToStash(py);
+        }
     }
 
     public void AddToStash(Pyramid pyramid)
@@ -65,17 +84,17 @@ public class History
 {
     GameState state;
     int index;
-    List<Move> moves;
+    List<TurnAction> moves;
 
     public History(int numPlayers)
     {
         state = new GameState();
         state.InitStash(numPlayers);
         index = 0;
-        moves = new List<Move>();
+        moves = new List<TurnAction>();
     }
 
-    public bool LogMove(Move move, bool revisionist = false)
+    public bool LogMove(TurnAction move, bool revisionist = false)
     {
         if (index == moves.Count)
         {
@@ -104,6 +123,12 @@ public class History
         moves[index].Execute(state);
         index++;
     }
+
+    public override string ToString()
+    {
+        return state.ToString();
+        //also all the moves
+    }
 }
 
 public enum Color
@@ -127,6 +152,23 @@ public class Pyramid
     {
         this.size = size;
         this.color = color;
+    }
+
+    public Pyramid(Pyramid toClone)
+    {
+        this.size = toClone.size;
+        this.color = toClone.color;
+    }
+
+    public override bool Equals(object obj)
+    {
+        Pyramid pyramid = obj as Pyramid;
+        return (pyramid.color == color && pyramid.size == size);
+    }
+
+    public override int GetHashCode()
+    {
+        return size.GetHashCode() * 17 + color.GetHashCode();
     }
 }
 public class Ship : Pyramid
@@ -160,8 +202,8 @@ public class Star : Pyramid
 public class world
 {
     public int playerHW = -1;
-    public Star[] stars;
-    public Ship[] ships;
+    public List<Star> stars;
+    public List<Ship> ships;
 
     public override string ToString()
     {

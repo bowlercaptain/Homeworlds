@@ -13,7 +13,16 @@ public class MastoSlinger : MonoBehaviour
     //create and implement a slinger interface that conveys game moves
     void Start()
     {
-        doMastoThings();
+        ExampleGame();
+        //doMastoThings();
+    }
+
+    public void ExampleGame()
+    {
+        var state = new History(2);
+        Debug.Log(state.ToString());
+        state.LogMove(new Homeworld(new Pyramid(1, Color.Blue), new Pyramid(3, Color.Green), Color.Yellow, 1));
+        Debug.Log(state.ToString());
     }
 
    public async void doMastoThings()
